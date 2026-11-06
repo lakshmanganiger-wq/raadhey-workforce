@@ -13,16 +13,19 @@
         }
       },
       "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyBAmdUSWrRx3n6NBT8D6SjfCcqCBPrAvbc"
+      "api_key": [{"current_key": "AIzaSyBAmdUSWrRx3n6NBT8D6SjfCcqCBPrAvbc"}],
+      "services": {"appinvite_service": {"other_platform_oauth_client": []}}
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:721181876458:android:53f8ab1e2d50a180057793",
+        "android_client_info": {
+          "package_name": "com.raadhey.workforce.v3"
         }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
+      },
+      "oauth_client": [],
+      "api_key": [{"current_key": "AIzaSyBAmdUSWrRx3n6NBT8D6SjfCcqCBPrAvbc"}],
+      "services": {"appinvite_service": {"other_platform_oauth_client": []}}
     }
   ],
   "configuration_version": "1"
