@@ -58,9 +58,9 @@ public class MainActivity extends Activity {
     }
 
     private void render() {
-        root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setGravity(Gravity.CENTER_HORIZONTAL);
+        root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setGravity(Gravity.CENTER);
         root.setPadding(dp(24),dp(24),dp(24),dp(24)); root.setBackgroundColor(IVORY);
-        ScrollView scroll=new ScrollView(this); scroll.addView(root);
+        ScrollView scroll=new ScrollView(this); scroll.setFillViewport(true); scroll.addView(root,new ScrollView.LayoutParams(-1,-1));
         ImageView logo=new ImageView(this); logo.setImageResource(R.drawable.raadhey_logo);
         LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(74),dp(74)); lp.gravity=Gravity.CENTER; lp.bottomMargin=dp(8); root.addView(logo,lp);
         TextView brand=label("RAADHEY",29,GREEN,true); brand.setGravity(Gravity.CENTER); brand.setLetterSpacing(.08f); root.addView(brand,full());
@@ -128,6 +128,7 @@ public class MainActivity extends Activity {
 
     private void renderFounderDashboard() {
         root.removeAllViews();
+        root.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
         TextView heading=label("FOUNDER DASHBOARD",20,GREEN,true);
         heading.setPadding(0,dp(12),0,dp(8)); root.addView(heading,full());
         TextView welcome=label("Welcome, "+employeeName,14,0xFF555555,false);
@@ -154,8 +155,19 @@ public class MainActivity extends Activity {
                     if(enabled) active++;
                     String name=Objects.toString(item.child("fullName").getValue(String.class),"Employee");
                     String code=Objects.toString(item.child("employeeCode").getValue(String.class),"");
-                    TextView row=label(name+"  ·  "+code+"  ·  "+(enabled?"ACTIVE":"INACTIVE"),13,enabled?GREEN:0xFFB42318,true);
+                    TextView row=label(name+"  ·  "+code+"  ·  "+(enabled?"ACTIVE":"INACTIVE")+"  ›",13,enabled?GREEN:0xFFB42318,true);
                     row.setPadding(dp(10),dp(12),dp(10),dp(12));
+                    row.setOnClickListener(v->{
+                        String action=enabled?"Deactivate access":"Reactivate access";
+                        new android.app.AlertDialog.Builder(this)
+                            .setTitle(name+" · "+code)
+                            .setMessage(enabled?"Remove this employee's app access? Their attendance history will be retained.":"Restore this employee's app access?")
+                            .setNegativeButton("CANCEL",null)
+                            .setPositiveButton(action,(d,w)->db.child("profiles").child(item.getKey()).child("active").setValue(!enabled)
+                                .addOnSuccessListener(done->{toast(enabled?"Employee access deactivated. Attendance history retained.":"Employee access restored.");refresh.run();})
+                                .addOnFailureListener(err->toast("Could not update employee: "+err.getLocalizedMessage())))
+                            .show();
+                    });
                     employeeList.addView(row,full());
                 }
                 employees.setText("ACTIVE EMPLOYEES: "+active);
