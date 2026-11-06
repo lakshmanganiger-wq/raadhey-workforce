@@ -14,12 +14,8 @@ android {
         targetSdk 35
         versionCode 3
         versionName '0.3.0'
-    }
-    buildFeatures {
-        buildConfig true
-    }
-    defaultConfig {
         buildConfigField 'String', 'SUPABASE_URL', '"' + supabaseUrl.replace('"','\\\"') + '"'
         buildConfigField 'String', 'SUPABASE_ANON_KEY', '"' + supabaseAnonKey.replace('"','\\\"') + '"'
     }
+    buildFeatures { buildConfig true }
 }
