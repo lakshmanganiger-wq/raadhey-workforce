@@ -12,13 +12,17 @@
     "attendance": {
       ".read": "auth != null && auth.token.admin === true",
       "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
-        ".write": false
+        ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+        "$date": {
+          ".write": "auth != null && auth.uid === $uid && root.child('profiles').child($uid).child('active').val() === true && root.child('profiles').child($uid).child('role').val() === 'employee' && ((!data.exists() && newData.child('checkInAt').exists() && !newData.child('checkOutAt').exists()) || (data.exists() && !data.child('checkOutAt').exists() && newData.child('checkInAt').val() === data.child('checkInAt').val() && newData.child('checkOutAt').exists()))"
+        }
       }
     },
     "liveLocations": {
       ".read": "auth != null && auth.token.admin === true",
-      ".write": false
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid && ( !newData.exists() || (root.child('profiles').child($uid).child('active').val() === true && root.child('attendance').child($uid).child(newData.child('attendanceDate').val()).exists() && !root.child('attendance').child($uid).child(newData.child('attendanceDate').val()).child('checkOutAt').exists()))"
+      }
     },
     "attendanceEvents": {
       ".read": "auth != null && auth.token.admin === true",
