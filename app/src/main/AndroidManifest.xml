@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
@@ -9,7 +10,7 @@
     <application
         android:allowBackup="false"
         android:icon="@drawable/raadhey_logo"
-        android:label="RAADHEY TEXTILE PRINTING &amp; APPAREL SOLUTIONS"
+        android:label="RAADHEY Workforce"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:usesCleartextTraffic="false">
         <activity android:name=".MainActivity" android:exported="true">
@@ -18,5 +19,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service android:name=".LocationTrackingService" android:exported="false" android:foregroundServiceType="location" />
     </application>
 </manifest>
