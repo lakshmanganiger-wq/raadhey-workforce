@@ -9,8 +9,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
         android:allowBackup="false"
-        android:icon="@drawable/raadhey_logo"
-        android:roundIcon="@drawable/raadhey_logo"
+        android:icon="@drawable-nodpi/raadhey_launcher"
+        android:roundIcon="@drawable-nodpi/raadhey_launcher"
         android:label="RAADHEY TEXTILE PRINTING &amp; APPAREL SOLUTIONS"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:usesCleartextTraffic="false">
