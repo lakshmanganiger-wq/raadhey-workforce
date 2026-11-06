@@ -18,11 +18,7 @@
 5. Copy the Project URL and public anon/publishable key from Project Settings > API. Never use the service_role key in the app or dashboard.
 
 ## Build configuration
-The GitHub Actions build reads two repository Actions secrets:
-- SUPABASE_URL
-- SUPABASE_ANON_KEY
-
-Add them under Repository > Settings > Secrets and variables > Actions, then run the "Build RAADHEY Android APK" workflow. If these are missing, the APK can compile but cannot sign in or sync.
+Build configuration is stored in app/supabase.properties. Once the project URL and public anon/publishable key are supplied, these values can be added there and the APK rebuilt. The public anon key is intended for client apps; never put the service_role key in the Android app.
 
 ## Admin dashboard
 Open /admin/index.html in a static host (for example, deploy the repository's admin folder to a static site). Sign in with the Supabase URL, public anon key, and an active profile whose role is admin.
