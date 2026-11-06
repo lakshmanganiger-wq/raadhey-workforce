@@ -57,7 +57,7 @@ public class MainActivity extends Activity {
     }
 
     private void renderLogin() {
-        emailInput=new EditText(this); emailInput.setSingleLine(true); emailInput.setHint("Employee email"); emailInput.setTextSize(15); font(emailInput); root.addView(emailInput,full());
+        emailInput=new EditText(this); emailInput.setSingleLine(true); emailInput.setHint("Employee ID or email"); emailInput.setTextSize(15); font(emailInput); root.addView(emailInput,full());
         passwordInput=new EditText(this); passwordInput.setSingleLine(true); passwordInput.setHint("Password"); passwordInput.setInputType(129); passwordInput.setTextSize(15); font(passwordInput); root.addView(passwordInput,full());
         Button login=button("SIGN IN"); LinearLayout.LayoutParams p=full(); p.topMargin=dp(24); root.addView(login,p);
         message=label("Sign in with the employee account created by your RAADHEY administrator.",12,0xFF666666,false); message.setPadding(0,dp(18),0,0); root.addView(message,full());
@@ -76,6 +76,7 @@ public class MainActivity extends Activity {
 
     private void signIn() {
         String email=emailInput.getText().toString().trim(), password=passwordInput.getText().toString();
+        if(!email.contains("@")) email=email.toUpperCase(Locale.US)+"@employees.raadhey.com";
         if(email.isEmpty()||password.isEmpty()){ toast("Enter your email and password."); return; }
         message.setText("Signing in…");
         io.execute(()->{
@@ -90,6 +91,7 @@ public class MainActivity extends Activity {
                     org.json.JSONArray rows=new org.json.JSONArray(raw); JSONObject row=rows.optJSONObject(0);
                     if(row==null) throw new Exception("Employee profile not found. Ask the administrator to activate your account.");
                     if(!row.optBoolean("active",true)) throw new Exception("This employee account is inactive.");
+                    if(!"employee".equals(row.optString("role"))) throw new Exception("Administrator accounts use the web dashboard, not the employee app.");
                     name=row.optString("full_name","Employee");
                 }
                 final String display=name, refreshToken=refresh;
