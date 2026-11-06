@@ -164,7 +164,7 @@ public class MainActivity extends Activity {
                             .setMessage(enabled?"Remove this employee's app access? Their attendance history will be retained.":"Restore this employee's app access?")
                             .setNegativeButton("CANCEL",null)
                             .setPositiveButton(action,(d,w)->db.child("profiles").child(item.getKey()).child("active").setValue(!enabled)
-                                .addOnSuccessListener(done->{toast(enabled?"Employee access deactivated. Attendance history retained.":"Employee access restored.");refresh.run();})
+                                .addOnSuccessListener(done->{toast(enabled?"Employee access deactivated. Attendance history retained.":"Employee access restored.");renderFounderDashboard();})
                                 .addOnFailureListener(err->toast("Could not update employee: "+err.getLocalizedMessage())))
                             .show();
                     });
