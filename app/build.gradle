@@ -3,14 +3,6 @@ plugins {
     id 'com.google.gms.google-services'
 }
 
-def localSupabase = new Properties()
-def localConfig = file('supabase.properties')
-if (localConfig.exists()) {
-    localConfig.withInputStream { localSupabase.load(it) }
-}
-def supabaseUrl = (project.findProperty('supabaseUrl') ?: System.getenv('SUPABASE_URL') ?: localSupabase.getProperty('SUPABASE_URL', '')).toString()
-def supabaseAnonKey = (project.findProperty('supabaseAnonKey') ?: System.getenv('SUPABASE_ANON_KEY') ?: localSupabase.getProperty('SUPABASE_ANON_KEY', '')).toString()
-
 android {
     namespace 'com.raadhey.workforce'
     compileSdk 35
@@ -18,12 +10,9 @@ android {
         applicationId 'com.raadhey.workforce.v3'
         minSdk 23
         targetSdk 35
-        versionCode 4
-        versionName '0.4.0'
-        buildConfigField 'String', 'SUPABASE_URL', '"' + supabaseUrl.replace('"','\\\"') + '"'
-        buildConfigField 'String', 'SUPABASE_ANON_KEY', '"' + supabaseAnonKey.replace('"','\\\"') + '"'
+        versionCode 5
+        versionName '0.5.0'
     }
-    buildFeatures { buildConfig true }
 }
 
 dependencies {
