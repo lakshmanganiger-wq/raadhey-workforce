@@ -5,15 +5,18 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
+import android.graphics.Typeface;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Looper;
 import android.view.Gravity;
-import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -23,6 +26,10 @@ import java.util.Locale;
 
 public class MainActivity extends Activity {
     private static final int LOCATION_PERMISSION_REQUEST = 41;
+    private static final int EMERALD = 0xFF075B46;
+    private static final int IVORY = 0xFFF7F5EF;
+    private static final int GOLD = 0xFF9A783D;
+    private Typeface lexend;
     private TextView statusText;
     private TextView locationText;
     private EditText employeeIdInput;
@@ -34,6 +41,11 @@ public class MainActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        try {
+            lexend = Typeface.createFromAsset(getAssets(), "Lexend.ttf");
+        } catch (Exception ignored) {
+            lexend = Typeface.create("sans-serif", Typeface.NORMAL);
+        }
         preferences = getSharedPreferences("raadhey_attendance", MODE_PRIVATE);
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         checkedIn = preferences.getBoolean("checked_in", false);
@@ -41,63 +53,98 @@ public class MainActivity extends Activity {
         refreshStatus();
     }
 
+    private void applyFont(TextView view) {
+        if (lexend != null) view.setTypeface(lexend);
+    }
+
     private void buildScreen() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(28, 36, 28, 28);
+        root.setPadding(28, 30, 28, 26);
         root.setGravity(Gravity.CENTER_HORIZONTAL);
-        root.setBackgroundColor(0xFFF7F5EF);
+        root.setBackgroundColor(IVORY);
+
+        ImageView logo = new ImageView(this);
+        logo.setImageResource(com.raadhey.workforce.R.drawable.raadhey_logo);
+        logo.setContentDescription("RAADHEY peacock feather logo");
+        LinearLayout.LayoutParams logoParams = new LinearLayout.LayoutParams(dp(76), dp(76));
+        logoParams.bottomMargin = dp(8);
+        root.addView(logo, logoParams);
 
         TextView brand = new TextView(this);
         brand.setText("RAADHEY");
         brand.setTextSize(30);
-        brand.setTextColor(0xFF075B46);
+        brand.setTextColor(EMERALD);
         brand.setGravity(Gravity.CENTER);
-        brand.setLetterSpacing(0.12f);
-        root.addView(brand, fullWidth(android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        brand.setLetterSpacing(0.08f);
+        brand.setTypeface(lexend, Typeface.SEMI_BOLD);
+        root.addView(brand, fullWidth(ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        TextView subtitle = new TextView(this);
-        subtitle.setText("WORKFORCE ATTENDANCE");
-        subtitle.setTextSize(13);
-        subtitle.setTextColor(0xFF8A6D35);
-        subtitle.setGravity(Gravity.CENTER);
-        subtitle.setPadding(0, 6, 0, 34);
-        root.addView(subtitle, fullWidth(android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        TextView company = new TextView(this);
+        company.setText("TEXTILE PRINTING &\nAPPAREL SOLUTIONS");
+        company.setTextSize(11);
+        company.setTextColor(GOLD);
+        company.setGravity(Gravity.CENTER);
+        company.setLetterSpacing(0.07f);
+        company.setLineSpacing(dp(3), 1.0f);
+        company.setPadding(dp(8), dp(7), dp(8), dp(20));
+        applyFont(company);
+        root.addView(company, fullWidth(ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        TextView section = new TextView(this);
+        section.setText("WORKFORCE ATTENDANCE");
+        section.setTextSize(12);
+        section.setTextColor(EMERALD);
+        section.setGravity(Gravity.CENTER);
+        section.setLetterSpacing(0.10f);
+        section.setPadding(0, 0, 0, dp(25));
+        applyFont(section);
+        root.addView(section, fullWidth(ViewGroup.LayoutParams.WRAP_CONTENT));
 
         employeeIdInput = new EditText(this);
         employeeIdInput.setSingleLine(true);
+        employeeIdInput.setTextSize(15);
         employeeIdInput.setHint("Enter employee ID");
         employeeIdInput.setText(preferences.getString("employee_id", ""));
-        root.addView(employeeIdInput, fullWidth(android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        applyFont(employeeIdInput);
+        root.addView(employeeIdInput, fullWidth(ViewGroup.LayoutParams.WRAP_CONTENT));
 
         statusText = new TextView(this);
-        statusText.setTextSize(18);
+        statusText.setTextSize(17);
         statusText.setTextColor(0xFF173D32);
-        statusText.setPadding(0, 28, 0, 16);
-        root.addView(statusText, fullWidth(android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        statusText.setPadding(0, dp(26), 0, dp(14));
+        applyFont(statusText);
+        root.addView(statusText, fullWidth(ViewGroup.LayoutParams.WRAP_CONTENT));
 
         locationText = new TextView(this);
         locationText.setText("Your GPS location will appear here when you mark attendance.");
-        locationText.setTextSize(14);
+        locationText.setTextSize(13);
         locationText.setTextColor(0xFF555555);
-        locationText.setPadding(0, 8, 0, 24);
-        root.addView(locationText, fullWidth(android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        locationText.setPadding(0, dp(8), 0, dp(22));
+        applyFont(locationText);
+        root.addView(locationText, fullWidth(ViewGroup.LayoutParams.WRAP_CONTENT));
 
         attendanceButton = new Button(this);
         attendanceButton.setTextColor(0xFFFFFFFF);
-        attendanceButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF075B46));
+        attendanceButton.setBackgroundTintList(ColorStateList.valueOf(EMERALD));
+        applyFont(attendanceButton);
         attendanceButton.setOnClickListener(v -> handleAttendance());
-        root.addView(attendanceButton, fullWidth(android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        root.addView(attendanceButton, fullWidth(ViewGroup.LayoutParams.WRAP_CONTENT));
 
         TextView note = new TextView(this);
         note.setText("Prototype build • Attendance is stored on this device only");
-        note.setTextSize(11);
+        note.setTextSize(10);
         note.setTextColor(0xFF777777);
         note.setGravity(Gravity.CENTER);
-        note.setPadding(0, 32, 0, 0);
-        root.addView(note, fullWidth(android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        note.setPadding(0, dp(28), 0, 0);
+        applyFont(note);
+        root.addView(note, fullWidth(ViewGroup.LayoutParams.WRAP_CONTENT));
 
         setContentView(root);
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
     private LinearLayout.LayoutParams fullWidth(int height) {
