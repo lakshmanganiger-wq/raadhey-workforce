@@ -28,6 +28,11 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      - name: Add Lexend font
+        run: |
+          mkdir -p app/src/main/assets
+          curl -fL 'https://raw.githubusercontent.com/google/fonts/main/ofl/lexend/Lexend%5Bwght%5D.ttf' -o app/src/main/assets/Lexend.ttf
+
       - name: Build debug APK
         run: gradle --no-daemon assembleDebug
 
