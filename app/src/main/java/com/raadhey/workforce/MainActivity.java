@@ -208,9 +208,18 @@ public class MainActivity extends Activity {
     private void createEmployeeAccount(String fullName,String code,String password,String department,android.app.AlertDialog dialog){
         String email=code.toLowerCase(Locale.US)+"@employees.raadhey.com";
         DatabaseReference profiles=db.child("profiles");
-        profiles.orderByChild("employeeCode").equalTo(code).get().addOnCompleteListener(this,check->{
-            if(!check.isSuccessful()){dialog.getButton(-1).setEnabled(true);toast("Could not verify Employee ID. Check connection.");return;}
-            if(check.getResult().exists()){dialog.getButton(-1).setEnabled(true);toast("Employee ID already exists.");return;}
+        profiles.get().addOnCompleteListener(this,check->{
+            if(!check.isSuccessful() || check.getResult()==null){
+                dialog.getButton(-1).setEnabled(true);
+                Exception error=check.getException();
+                toast("Employee lookup failed: "+(error==null?"Unknown Firebase error":error.getLocalizedMessage()));
+                return;
+            }
+            boolean duplicate=false;
+            for(DataSnapshot existing:check.getResult().getChildren()){
+                if(code.equalsIgnoreCase(Objects.toString(existing.child("employeeCode").getValue(String.class),""))){duplicate=true;break;}
+            }
+            if(duplicate){dialog.getButton(-1).setEnabled(true);toast("Employee ID already exists.");return;}
             FirebaseApp app;
             try{app=FirebaseApp.getInstance("raadheyEmployeeCreator");}
             catch(IllegalStateException ex){app=FirebaseApp.initializeApp(this,FirebaseApp.getInstance().getOptions(),"raadheyEmployeeCreator");}
