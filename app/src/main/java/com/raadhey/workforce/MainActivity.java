@@ -150,8 +150,9 @@ public class MainActivity extends Activity {
     private void submitAttendance(Location loc) {
         if(attendanceState==2){ toast("Attendance is already completed for today."); return; }
         float accuracy=loc.hasAccuracy()?loc.getAccuracy():9999;
-        if(accuracy>150){ locationInfo.setText("GPS accuracy is "+Math.round(accuracy)+"m. Please retry outdoors."); return; }
-        if(!isInsideFactoryBoundary(loc.getLatitude(),loc.getLongitude())){ locationInfo.setText("You are outside the RAADHEY factory attendance boundary."); return; }
+        if(accuracy>150){ locationInfo.setTextColor(0xFFB42318); locationInfo.setText("GPS accuracy is "+Math.round(accuracy)+"m. Please retry outdoors."); return; }
+        if(!isInsideFactoryBoundary(loc.getLatitude(),loc.getLongitude())){ locationInfo.setTextColor(0xFFB42318); locationInfo.setText("⚠ You are outside the RAADHEY factory attendance boundary."); return; }
+        locationInfo.setTextColor(GREEN);
         actionButton.setEnabled(false); message.setText(attendanceState==1?"Checking out…":"Checking in…");
         DatabaseReference day=db.child("attendance").child(userId).child(todayKey);
         if(attendanceState==0) {
