@@ -61,10 +61,10 @@ public class MainActivity extends Activity {
         root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setGravity(Gravity.CENTER);
         root.setPadding(dp(24),dp(24),dp(24),dp(24)); root.setBackgroundColor(IVORY);
         ScrollView scroll=new ScrollView(this); scroll.setFillViewport(true); scroll.addView(root,new ScrollView.LayoutParams(-1,-1));
-        ImageView logo=new ImageView(this); logo.setImageResource(R.drawable.raadhey_logo);
-        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(74),dp(74)); lp.gravity=Gravity.CENTER; lp.bottomMargin=dp(8); root.addView(logo,lp);
-        TextView brand=label("RAADHEY",29,GREEN,true); brand.setGravity(Gravity.CENTER); brand.setLetterSpacing(.08f); root.addView(brand,full());
-        TextView company=label("TEXTILE PRINTING &\nAPPAREL SOLUTIONS",11,GOLD,false); company.setGravity(Gravity.CENTER); company.setLetterSpacing(.07f); company.setPadding(0,dp(7),0,dp(20)); root.addView(company,full());
+        ImageView logo=new ImageView(this); logo.setImageResource(R.drawable.raadhey_wordmark);
+        logo.setAdjustViewBounds(true); logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(150)); lp.gravity=Gravity.CENTER; lp.bottomMargin=dp(12); root.addView(logo,lp);
+        TextView company=label("TEXTILE PRINTING & APPAREL SOLUTIONS",11,GOLD,true); company.setGravity(Gravity.CENTER); company.setLetterSpacing(.07f); company.setPadding(0,dp(2),0,dp(22)); root.addView(company,full());
         TextView heading=label(auth.getCurrentUser()==null?"EMPLOYEE LOGIN":"WORKFORCE ATTENDANCE",13,GREEN,true); heading.setGravity(Gravity.CENTER); heading.setPadding(0,0,0,dp(22)); root.addView(heading,full());
         if(auth.getCurrentUser()==null) renderLogin(); else renderAttendance();
         setContentView(scroll);
@@ -128,7 +128,10 @@ public class MainActivity extends Activity {
 
     private void renderFounderDashboard() {
         root.removeAllViews();
-        root.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
+        root.setGravity(Gravity.CENTER_HORIZONTAL);
+        ImageView dashboardLogo=new ImageView(this); dashboardLogo.setImageResource(R.drawable.raadhey_wordmark);
+        dashboardLogo.setAdjustViewBounds(true); dashboardLogo.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        LinearLayout.LayoutParams brandParams=new LinearLayout.LayoutParams(-1,dp(112)); brandParams.bottomMargin=dp(8); root.addView(dashboardLogo,brandParams);
         TextView heading=label("FOUNDER DASHBOARD",20,GREEN,true);
         heading.setPadding(0,dp(12),0,dp(8)); root.addView(heading,full());
         TextView welcome=label("Welcome, "+employeeName,14,0xFF555555,false);
@@ -151,6 +154,7 @@ public class MainActivity extends Activity {
                 int active=0; employeeList.removeAllViews();
                 for(DataSnapshot item:all.getChildren()){
                     if(!"employee".equals(item.child("role").getValue(String.class))) continue;
+                    if(Boolean.TRUE.equals(item.child("deleted").getValue(Boolean.class))) continue;
                     boolean enabled=Boolean.TRUE.equals(item.child("active").getValue(Boolean.class));
                     if(enabled) active++;
                     String name=Objects.toString(item.child("fullName").getValue(String.class),"Employee");
@@ -163,6 +167,16 @@ public class MainActivity extends Activity {
                             .setTitle(name+" · "+code)
                             .setMessage(enabled?"Remove this employee's app access? Their attendance history will be retained.":"Restore this employee's app access?")
                             .setNegativeButton("CANCEL",null)
+                            .setNeutralButton("DELETE EMPLOYEE",(d,w)->new android.app.AlertDialog.Builder(this)
+                                .setTitle("Delete "+name+"?")
+                                .setMessage("This removes the employee from the directory and blocks app access. Attendance history will be retained. This cannot be undone from the app.")
+                                .setNegativeButton("CANCEL",null)
+                                .setPositiveButton("DELETE",(confirm,which)->{
+                                    Map<String,Object> removal=new HashMap<>(); removal.put("active",false); removal.put("deleted",true);
+                                    db.child("profiles").child(item.getKey()).updateChildren(removal)
+                                        .addOnSuccessListener(done->{toast("Employee removed. Attendance history retained.");renderFounderDashboard();})
+                                        .addOnFailureListener(err->toast("Could not delete employee: "+err.getLocalizedMessage()));
+                                }).show())
                             .setPositiveButton(action,(d,w)->db.child("profiles").child(item.getKey()).child("active").setValue(!enabled)
                                 .addOnSuccessListener(done->{toast(enabled?"Employee access deactivated. Attendance history retained.":"Employee access restored.");renderFounderDashboard();})
                                 .addOnFailureListener(err->toast("Could not update employee: "+err.getLocalizedMessage())))
