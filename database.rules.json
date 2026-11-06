@@ -3,22 +3,22 @@
     ".read": false,
     ".write": false,
     "profiles": {
+      ".read": "auth != null && auth.token.admin === true",
       "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+        ".read": "auth != null && auth.uid === $uid",
         ".write": false
       }
     },
     "attendance": {
+      ".read": "auth != null && auth.token.admin === true",
       "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+        ".read": "auth != null && auth.uid === $uid",
         ".write": false
       }
     },
     "liveLocations": {
-      "$uid": {
-        ".read": "auth != null && auth.token.admin === true",
-        ".write": false
-      }
+      ".read": "auth != null && auth.token.admin === true",
+      ".write": false
     },
     "attendanceEvents": {
       ".read": "auth != null && auth.token.admin === true",
