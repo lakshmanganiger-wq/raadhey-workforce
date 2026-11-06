@@ -10,7 +10,7 @@
 ## Supabase setup
 1. Create or open the RAADHEY Workforce Supabase project.
 2. In SQL Editor, run supabase/migrations/001_initial_schema.sql, then supabase/migrations/002_factory_polygon_geofence.sql.
-3. In Authentication > Users, create an admin user and each employee user.
+3. In Authentication > Users, create an admin user and each employee user. For employees, use the sign-in email format `EMPLOYEEID@employees.raadhey.com` (for example, `RHD001@employees.raadhey.com`); employees type only their ID in the app. Set passwords and confirm the accounts in Supabase.
 4. In SQL Editor, promote the administrator and create employee codes. Replace the email address below:
    `update public.profiles set role='admin', full_name='RAADHEY Admin' where email='admin@example.com';`
    Employee codes can be assigned with:
