@@ -10,6 +10,7 @@ import android.location.*;
 import android.os.*;
 import android.view.Gravity;
 import android.widget.*;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.*;
@@ -174,6 +175,9 @@ public class MainActivity extends Activity {
                 }).addOnFailureListener(e->present.setText("Attendance unavailable: "+e.getLocalizedMessage()));
             }).addOnFailureListener(e->employees.setText("Unable to load employees: "+e.getLocalizedMessage()));
         };
+        Button addEmployee=button("＋ ADD EMPLOYEE");
+        LinearLayout.LayoutParams addParams=full(); addParams.topMargin=dp(18); root.addView(addEmployee,addParams);
+        addEmployee.setOnClickListener(v->showCreateEmployeeDialog());
         Button reload=button("REFRESH DASHBOARD"); LinearLayout.LayoutParams rp=full(); rp.topMargin=dp(16); root.addView(reload,rp); reload.setOnClickListener(v->refresh.run());
         Button logout=button("SIGN OUT"); logout.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF777777));
         LinearLayout.LayoutParams lp=full(); lp.topMargin=dp(10); root.addView(logout,lp);
@@ -181,6 +185,48 @@ public class MainActivity extends Activity {
         TextView note=label("Founder access · Employee attendance and directory overview",11,0xFF777777,false);
         note.setPadding(0,dp(16),0,0); root.addView(note,full());
         refresh.run();
+    }
+
+    private void showCreateEmployeeDialog(){
+        LinearLayout form=new LinearLayout(this); form.setOrientation(LinearLayout.VERTICAL); form.setPadding(dp(20),dp(8),dp(20),0);
+        EditText name=new EditText(this); name.setHint("Employee full name"); form.addView(name,full());
+        EditText code=new EditText(this); code.setHint("Employee ID (e.g. TEST001)"); form.addView(code,full());
+        EditText password=new EditText(this); password.setHint("Temporary password (min. 6 characters)"); password.setInputType(129); form.addView(password,full());
+        EditText department=new EditText(this); department.setHint("Department (optional)"); form.addView(department,full());
+        new android.app.AlertDialog.Builder(this).setTitle("Create employee account").setView(form)
+            .setNegativeButton("CANCEL",null).setPositiveButton("CREATE",null).create();
+        android.app.AlertDialog dialog=new android.app.AlertDialog.Builder(this).setTitle("Create employee account").setView(form).setNegativeButton("CANCEL",null).setPositiveButton("CREATE",null).create();
+        dialog.setOnShowListener(x->dialog.getButton(-1).setOnClickListener(v->{
+            String fullName=name.getText().toString().trim(), employeeId=code.getText().toString().trim().toUpperCase(Locale.US), pass=password.getText().toString();
+            if(fullName.isEmpty()||employeeId.isEmpty()||pass.length()<6){toast("Enter name, employee ID and a password of at least 6 characters.");return;}
+            dialog.getButton(-1).setEnabled(false);
+            createEmployeeAccount(fullName,employeeId,pass,department.getText().toString().trim(),dialog);
+        }));
+        dialog.show();
+    }
+
+    private void createEmployeeAccount(String fullName,String code,String password,String department,android.app.AlertDialog dialog){
+        String email=code.toLowerCase(Locale.US)+"@employees.raadhey.com";
+        DatabaseReference profiles=db.child("profiles");
+        profiles.orderByChild("employeeCode").equalTo(code).get().addOnCompleteListener(this,check->{
+            if(!check.isSuccessful()){dialog.getButton(-1).setEnabled(true);toast("Could not verify Employee ID. Check connection.");return;}
+            if(check.getResult().exists()){dialog.getButton(-1).setEnabled(true);toast("Employee ID already exists.");return;}
+            FirebaseApp app;
+            try{app=FirebaseApp.getInstance("raadheyEmployeeCreator");}
+            catch(IllegalStateException ex){app=FirebaseApp.initializeApp(this,FirebaseApp.getInstance().getOptions(),"raadheyEmployeeCreator");}
+            FirebaseAuth creator=FirebaseAuth.getInstance(app);
+            creator.createUserWithEmailAndPassword(email,password).addOnCompleteListener(this,created->{
+                if(!created.isSuccessful()){dialog.getButton(-1).setEnabled(true);toast("Account creation failed: "+(created.getException()==null?"Unknown error":created.getException().getLocalizedMessage()));return;}
+                FirebaseUser newUser=created.getResult().getUser();
+                Map<String,Object> profile=new HashMap<>();
+                profile.put("fullName",fullName);profile.put("employeeCode",code);profile.put("role","employee");profile.put("active",true);profile.put("department",department);profile.put("createdAt",ServerValue.TIMESTAMP);
+                profiles.child(newUser.getUid()).setValue(profile).addOnCompleteListener(this,saved->{
+                    creator.signOut();
+                    if(saved.isSuccessful()){dialog.dismiss();toast("Employee "+code+" created successfully.");renderFounderDashboard();}
+                    else{dialog.getButton(-1).setEnabled(true);toast("Profile save failed: "+(saved.getException()==null?"Database error":saved.getException().getLocalizedMessage()));}
+                });
+            });
+        });
     }
 
     private void renderAttendance() {
