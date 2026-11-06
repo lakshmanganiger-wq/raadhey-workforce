@@ -92,7 +92,7 @@ public class MainActivity extends Activity {
             }
             employeeName=Objects.toString(p.child("fullName").getValue(String.class),"Employee");
             employeeCode=Objects.toString(p.child("employeeCode").getValue(String.class),"");
-            db.child("attendance").child(userId).child(new java.text.SimpleDateFormat("yyyy-MM-dd",Locale.US).format(new Date())).get().addOnSuccessListener(a->{checkedIn=a.exists()&&a.child("checkOutAt").getValue()==null; render();});
+            db.child("attendance").child(userId).child(dateKey()).get().addOnSuccessListener(a->{checkedIn=a.exists()&&a.child("checkOutAt").getValue()==null; render();});
         });
     }
 
@@ -146,6 +146,7 @@ public class MainActivity extends Activity {
     private void refreshAttendance(){ status.setText(checkedIn?"STATUS: CHECKED IN":"STATUS: NOT CHECKED IN"); actionButton.setText(checkedIn?"CHECK OUT":"CHECK IN"); }
     private void startTracking(){ Intent i=new Intent(this,LocationTrackingService.class); i.setAction(LocationTrackingService.ACTION_START); if(Build.VERSION.SDK_INT>=26) startForegroundService(i); else startService(i); }
     private void stopTracking(){ Intent i=new Intent(this,LocationTrackingService.class); i.setAction(LocationTrackingService.ACTION_STOP); startService(i); }
+    private String dateKey(){ java.text.SimpleDateFormat f=new java.text.SimpleDateFormat("yyyy-MM-dd",Locale.US); f.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Kolkata")); return f.format(new Date()); }
     private void messageSafe(String s){ if(message!=null)message.setText(s); }
     private void toast(String s){ Toast.makeText(this,s,Toast.LENGTH_LONG).show(); }
     private TextView label(String s,int size,int color,boolean bold){ TextView t=new TextView(this); t.setText(s); t.setTextSize(size); t.setTextColor(color); t.setTypeface(lexend,bold?Typeface.BOLD:Typeface.NORMAL); return t; }
