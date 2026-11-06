@@ -42,17 +42,33 @@ public class LocationTrackingService extends Service {
         if(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)!=PackageManager.PERMISSION_GRANTED){stopSelf();return;}
         listener=new LocationListener(){ @Override public void onLocationChanged(Location l){
             SharedPreferencesHolder h=new SharedPreferencesHolder(getApplicationContext());
-            if(!h.token.isEmpty()&&!h.uid.isEmpty()) io.execute(()->{try{SupabaseClient.sendLocation(h.token,h.uid,l.getLatitude(),l.getLongitude(),l.getAccuracy());}catch(Exception ignored){}});
+            if(!h.token.isEmpty()&&!h.uid.isEmpty()) io.execute(()->syncLocation(h,l));
         }};
         try{ String provider=manager.isProviderEnabled(LocationManager.GPS_PROVIDER)?LocationManager.GPS_PROVIDER:LocationManager.NETWORK_PROVIDER;
             manager.requestLocationUpdates(provider,5*60*1000L,20f,listener,Looper.getMainLooper());
         }catch(SecurityException e){stopSelf();}
     }
+    private void syncLocation(SharedPreferencesHolder h, Location l) {
+        try {
+            SupabaseClient.sendLocation(h.token,h.uid,l.getLatitude(),l.getLongitude(),l.getAccuracy());
+        } catch(Exception first) {
+            try {
+                if(h.refresh.isEmpty()) return;
+                org.json.JSONObject refreshed=SupabaseClient.refreshSession(h.refresh);
+                String token=refreshed.optString("access_token");
+                String refresh=refreshed.optString("refresh_token",h.refresh);
+                if(token.isEmpty()) return;
+                getSharedPreferences("raadhey_session",MODE_PRIVATE).edit()
+                    .putString("access_token",token).putString("refresh_token",refresh).apply();
+                SupabaseClient.sendLocation(token,h.uid,l.getLatitude(),l.getLongitude(),l.getAccuracy());
+            } catch(Exception ignored) { }
+        }
+    }
     private void stopTracking(){if(listener!=null)manager.removeUpdates(listener);listener=null;stopForeground(true);}
     @Override public void onDestroy(){stopTracking();io.shutdown();super.onDestroy();}
     @Override public IBinder onBind(Intent intent){return null;}
     private static class SharedPreferencesHolder{
-        final String token,uid;
-        SharedPreferencesHolder(Context c){android.content.SharedPreferences p=c.getSharedPreferences("raadhey_session",MODE_PRIVATE);token=p.getString("access_token","");uid=p.getString("user_id","");}
+        final String token,uid,refresh;
+        SharedPreferencesHolder(Context c){android.content.SharedPreferences p=c.getSharedPreferences("raadhey_session",MODE_PRIVATE);token=p.getString("access_token","");uid=p.getString("user_id","");refresh=p.getString("refresh_token","");}
     }
 }
