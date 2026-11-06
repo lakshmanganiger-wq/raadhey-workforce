@@ -14,7 +14,7 @@ android {
     namespace 'com.raadhey.workforce'
     compileSdk 35
     defaultConfig {
-        applicationId 'com.raadhey.workforce.v2'
+        applicationId 'com.raadhey.workforce.v3'
         minSdk 23
         targetSdk 35
         versionCode 3
