@@ -77,7 +77,7 @@ public class MainActivity extends Activity {
         brand.setTextColor(EMERALD);
         brand.setGravity(Gravity.CENTER);
         brand.setLetterSpacing(0.08f);
-        brand.setTypeface(lexend, Typeface.SEMI_BOLD);
+        brand.setTypeface(lexend, Typeface.BOLD);
         root.addView(brand, fullWidth(ViewGroup.LayoutParams.WRAP_CONTENT));
 
         TextView company = new TextView(this);
