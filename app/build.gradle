@@ -1,5 +1,6 @@
 plugins {
     id 'com.android.application'
+    id 'com.google.gms.google-services'
 }
 
 def localSupabase = new Properties()
@@ -17,10 +18,16 @@ android {
         applicationId 'com.raadhey.workforce.v3'
         minSdk 23
         targetSdk 35
-        versionCode 3
-        versionName '0.3.0'
+        versionCode 4
+        versionName '0.4.0'
         buildConfigField 'String', 'SUPABASE_URL', '"' + supabaseUrl.replace('"','\\\"') + '"'
         buildConfigField 'String', 'SUPABASE_ANON_KEY', '"' + supabaseAnonKey.replace('"','\\\"') + '"'
     }
     buildFeatures { buildConfig true }
+}
+
+dependencies {
+    implementation platform('com.google.firebase:firebase-bom:33.7.0')
+    implementation 'com.google.firebase:firebase-auth'
+    implementation 'com.google.firebase:firebase-database'
 }
