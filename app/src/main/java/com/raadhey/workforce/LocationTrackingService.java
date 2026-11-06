@@ -8,6 +8,7 @@ import android.location.*;
 import android.os.*;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.*;
+import com.google.firebase.functions.FirebaseFunctions;
 import java.util.*;
 
 public class LocationTrackingService extends Service {
@@ -28,14 +29,8 @@ public class LocationTrackingService extends Service {
         if(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED&&checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)!=PackageManager.PERMISSION_GRANTED){stopSelf();return;}
         listener=new LocationListener(){@Override public void onLocationChanged(Location l){
             String uid=FirebaseAuth.getInstance().getUid();if(uid==null)return;
-            DatabaseReference db=FirebaseDatabase.getInstance("https://raadhey-workforce-66e2a-default-rtdb.asia-southeast1.firebasedatabase.app").getReference();
-            String date=new java.text.SimpleDateFormat("yyyy-MM-dd",Locale.US).format(new Date());
-            db.child("attendance").child(uid).child(date).get().addOnSuccessListener(a->{
-                if(a.exists()&&a.child("checkOutAt").getValue()==null){
-                    Map<String,Object> point=new HashMap<>();point.put("latitude",l.getLatitude());point.put("longitude",l.getLongitude());point.put("accuracyM",l.hasAccuracy()?l.getAccuracy():-1);point.put("recordedAt",ServerValue.TIMESTAMP);
-                    db.child("liveLocations").child(uid).setValue(point);
-                } else {stopTracking();stopSelf();}
-            });
+            Map<String,Object> point=new HashMap<>();point.put("latitude",l.getLatitude());point.put("longitude",l.getLongitude());point.put("accuracyM",l.hasAccuracy()?l.getAccuracy():-1);
+            FirebaseFunctions.getInstance("asia-south1").getHttpsCallable("updateEmployeeLocation").call(point);
         }};
         try{String p=manager.isProviderEnabled(LocationManager.GPS_PROVIDER)?LocationManager.GPS_PROVIDER:LocationManager.NETWORK_PROVIDER;manager.requestLocationUpdates(p,5*60*1000L,20f,listener,Looper.getMainLooper());}
         catch(SecurityException e){stopSelf();}
