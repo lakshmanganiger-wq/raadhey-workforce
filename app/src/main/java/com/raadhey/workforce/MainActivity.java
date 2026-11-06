@@ -54,7 +54,7 @@ public class MainActivity extends Activity {
         brand.setTextColor(0xFF075B46);
         brand.setGravity(Gravity.CENTER);
         brand.setLetterSpacing(0.12f);
-        root.addView(brand, fullWidth(WRAP_CONTENT));
+        root.addView(brand, fullWidth(ViewGroup.LayoutParams.WRAP_CONTENT));
 
         TextView subtitle = new TextView(this);
         subtitle.setText("WORKFORCE ATTENDANCE");
@@ -62,32 +62,32 @@ public class MainActivity extends Activity {
         subtitle.setTextColor(0xFF8A6D35);
         subtitle.setGravity(Gravity.CENTER);
         subtitle.setPadding(0, 6, 0, 34);
-        root.addView(subtitle, fullWidth(WRAP_CONTENT));
+        root.addView(subtitle, fullWidth(ViewGroup.LayoutParams.WRAP_CONTENT));
 
         employeeIdInput = new EditText(this);
         employeeIdInput.setSingleLine(true);
         employeeIdInput.setHint("Enter employee ID");
         employeeIdInput.setText(preferences.getString("employee_id", ""));
-        root.addView(employeeIdInput, fullWidth(WRAP_CONTENT));
+        root.addView(employeeIdInput, fullWidth(ViewGroup.LayoutParams.WRAP_CONTENT));
 
         statusText = new TextView(this);
         statusText.setTextSize(18);
         statusText.setTextColor(0xFF173D32);
         statusText.setPadding(0, 28, 0, 16);
-        root.addView(statusText, fullWidth(WRAP_CONTENT));
+        root.addView(statusText, fullWidth(ViewGroup.LayoutParams.WRAP_CONTENT));
 
         locationText = new TextView(this);
         locationText.setText("Your GPS location will appear here when you mark attendance.");
         locationText.setTextSize(14);
         locationText.setTextColor(0xFF555555);
         locationText.setPadding(0, 8, 0, 24);
-        root.addView(locationText, fullWidth(WRAP_CONTENT));
+        root.addView(locationText, fullWidth(ViewGroup.LayoutParams.WRAP_CONTENT));
 
         attendanceButton = new Button(this);
         attendanceButton.setTextColor(0xFFFFFFFF);
         attendanceButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF075B46));
         attendanceButton.setOnClickListener(v -> handleAttendance());
-        root.addView(attendanceButton, fullWidth(WRAP_CONTENT));
+        root.addView(attendanceButton, fullWidth(ViewGroup.LayoutParams.WRAP_CONTENT));
 
         TextView note = new TextView(this);
         note.setText("Prototype build • Attendance is stored on this device only");
@@ -95,7 +95,7 @@ public class MainActivity extends Activity {
         note.setTextColor(0xFF777777);
         note.setGravity(Gravity.CENTER);
         note.setPadding(0, 32, 0, 0);
-        root.addView(note, fullWidth(WRAP_CONTENT));
+        root.addView(note, fullWidth(ViewGroup.LayoutParams.WRAP_CONTENT));
 
         setContentView(root);
     }
