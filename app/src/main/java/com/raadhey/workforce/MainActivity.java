@@ -85,7 +85,7 @@ public class MainActivity extends Activity {
                 render(); if(message!=null) message.setText("Employee profile not found. Ask the RAADHEY administrator to create and activate your account."); return;
             }
             DataSnapshot p=task.getResult();
-            if(!p.child("active").getValue(Boolean.class).equals(true) || !"employee".equals(p.child("role").getValue(String.class))){
+            if(!Boolean.TRUE.equals(p.child("active").getValue(Boolean.class)) || !"employee".equals(p.child("role").getValue(String.class))){
                 auth.signOut(); render(); if(message!=null) message.setText("This account is inactive or is not an employee account."); return;
             }
             employeeName=Objects.toString(p.child("fullName").getValue(String.class),"Employee");
