@@ -5,6 +5,9 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public final class SupabaseClient {
     private SupabaseClient() {}
@@ -58,7 +61,7 @@ public final class SupabaseClient {
     public static void sendLocation(String token, String userId, double lat, double lng, float accuracy) throws Exception {
         JSONObject row = new JSONObject();
         row.put("employee_id", userId); row.put("latitude", lat); row.put("longitude", lng);
-        row.put("accuracy_m", accuracy); row.put("recorded_at", java.time.Instant.now().toString());
+        row.put("accuracy_m", accuracy); row.put("recorded_at", new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.US).format(new Date()));
         URL url = new URL(BASE_URL.replaceAll("/+$", "") + "/rest/v1/employee_locations");
         HttpURLConnection c = (HttpURLConnection) url.openConnection();
         c.setRequestMethod("POST"); c.setDoOutput(true);
