@@ -52,6 +52,11 @@ public final class SupabaseClient {
         return request("/auth/v1/token?grant_type=password", "POST", null, body);
     }
 
+    public static JSONObject refreshSession(String refreshToken) throws Exception {
+        JSONObject body = new JSONObject(); body.put("refresh_token", refreshToken);
+        return request("/auth/v1/token?grant_type=refresh_token", "POST", null, body);
+    }
+
     public static JSONObject rpc(String name, String token, double lat, double lng, float accuracy) throws Exception {
         JSONObject body = new JSONObject();
         body.put("p_latitude", lat); body.put("p_longitude", lng); body.put("p_accuracy_m", accuracy);
