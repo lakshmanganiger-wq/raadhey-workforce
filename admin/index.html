@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAADHEY Workforce Admin</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--green:#075b46;--gold:#9a783d;--cream:#f7f5ef;--ink:#1d3029;--muted:#68746e;--line:#e4e5df}
+*{box-sizing:border-box}body{margin:0;background:#f4f5f1;color:var(--ink);font:14px Arial,sans-serif}
+header{background:var(--green);color:white;padding:18px 24px;display:flex;justify-content:space-between;align-items:center}
+header strong{font-size:19px;letter-spacing:2px}header span{font-size:12px;color:#d6dfd9}
+main{max-width:1200px;margin:26px auto;padding:0 18px}.panel{background:white;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:18px;box-shadow:0 3px 14px #162d2010}
+h2{font-size:17px;margin:0 0 16px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.stat{background:var(--cream);border-radius:10px;padding:16px}.stat small{display:block;color:var(--muted);margin-bottom:8px}.stat b{font-size:25px;color:var(--green)}
+input,button{font:inherit;padding:12px;border:1px solid var(--line);border-radius:8px}input{width:100%;margin:5px 0 12px}button{background:var(--green);color:white;border:0;cursor:pointer;font-weight:700}button.secondary{background:#e9eee9;color:var(--green)}.login{max-width:440px;margin:60px auto}.row{display:flex;gap:10px;align-items:center}.row>*{flex:1}#map{height:380px;border-radius:10px}.scroll{overflow:auto}table{width:100%;border-collapse:collapse;min-width:600px}th,td{text-align:left;padding:12px;border-bottom:1px solid var(--line);white-space:nowrap}th{color:var(--muted);font-size:12px}td{font-size:13px}.hidden{display:none}.tag{padding:4px 8px;border-radius:20px;background:#e5f2eb;color:var(--green);font-size:11px}.error{color:#a33;margin-top:8px}.muted{color:var(--muted)}@media(max-width:700px){.grid{grid-template-columns:1fr}.row{display:block}header{padding:16px}}
+</style>
+</head>
+<body>
+<header><div><strong>RAADHEY</strong><br><span>TEXTILE PRINTING & APPAREL SOLUTIONS · WORKFORCE</span></div><button id="logout" class="secondary hidden">Sign out</button></header>
+<main>
+<section id="login" class="panel login">
+<h2>Administrator sign in</h2>
+<label>Supabase project URL</label><input id="url" placeholder="https://your-project.supabase.co" autocomplete="url">
+<label>Supabase anon / publishable key</label><input id="key" placeholder="Supabase public anon key">
+<label>Admin email</label><input id="email" type="email" placeholder="admin@company.com">
+<label>Password</label><input id="password" type="password" placeholder="Password">
+<button id="signIn" style="width:100%">SIGN IN</button><div id="loginError" class="error"></div>
+<p class="muted">Use the Supabase project URL and public anon key. Never enter a service-role key here.</p>
+</section>
+<section id="dashboard" class="hidden">
+<div class="grid">
+<div class="panel stat"><small>Active employees</small><b id="employees">—</b></div>
+<div class="panel stat"><small>Present today</small><b id="present">—</b></div>
+<div class="panel stat"><small>Late today</small><b id="late">—</b></div>
+</div>
+<div class="panel"><div class="row"><h2>Live employee locations</h2><span class="muted" id="updated">Waiting for first refresh</span><button class="secondary" id="refresh">Refresh now</button></div><div id="map"></div></div>
+<div class="panel"><h2>Today's attendance</h2><div class="scroll"><table><thead><tr><th>Employee</th><th>Employee ID</th><th>Check in</th><th>Check out</th><th>Status</th><th>Worked</th></tr></thead><tbody id="attendanceRows"><tr><td colspan="6">Loading…</td></tr></tbody></table></div></div>
+<div class="panel"><h2>Latest location updates</h2><div class="scroll"><table><thead><tr><th>Employee</th><th>Last update</th><th>Coordinates</th><th>Accuracy</th></tr></thead><tbody id="locationRows"></tbody></table></div></div>
+</section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let client=null,map=null,markers=[];
+const $=id=>document.getElementById(id);
+const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata'}).format(new Date());
+function fmt(v){return v?new Date(v).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Kolkata'}):'—'}
+function err(e){return e?.message||String(e)}
+$('signIn').onclick=async()=>{
+ $('loginError').textContent='';
+ const url=$('url').value.trim().replace(/\/$/,''); const key=$('key').value.trim();
+ try{
+  if(!url||!key)throw Error('Enter your Supabase project URL and public anon key.');
+  client=window.supabase.createClient(url,key);
+  const {data,error}=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
+  if(error)throw error;
+  const {data:profile,error:pe}=await client.from('profiles').select('role,active').eq('id',data.user.id).single();
+  if(pe)throw pe;if(profile.role!=='admin'||!profile.active)throw Error('This account is not an active RAADHEY administrator.');
+  $('login').classList.add('hidden');$('dashboard').classList.remove('hidden');$('logout').classList.remove('hidden');
+  initMap();await refresh();window.refreshTimer=setInterval(refresh,30000);
+ }catch(e){$('loginError').textContent=err(e);}
+};
+$('logout').onclick=async()=>{clearInterval(window.refreshTimer);if(client)await client.auth.signOut();location.reload()};
+$('refresh').onclick=refresh;
+function initMap(){if(map)return;map=L.map('map').setView([13.0868273605,77.4191855295],17);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);L.polygon([[13.0869225,77.4191348],[13.0868676,77.4192857],[13.0867285,77.4192381],[13.0867945,77.4190815]],{color:'#075b46',fillOpacity:.08}).addTo(map);}
+async function refresh(){
+ try{
+  const date=today();
+  const [{data:employees,error:e1},{data:attendance,error:e2},{data:locations,error:e3}]=await Promise.all([
+   client.from('profiles').select('id,full_name,employee_code,active').eq('active',true).eq('role','employee'),
+   client.from('attendance').select('id,employee_id,check_in,check_out,status,worked_minutes,profiles(full_name,employee_code)').eq('work_date',date).order('check_in'),
+   client.from('employee_locations').select('id,employee_id,latitude,longitude,accuracy_m,recorded_at,profiles(full_name,employee_code)').order('recorded_at',{ascending:false}).limit(100)
+  ]);
+  if(e1)throw e1;if(e2)throw e2;if(e3)throw e3;
+  $('employees').textContent=employees.length;
+  $('present').textContent=attendance.filter(x=>x.check_in).length;
+  $('late').textContent=attendance.filter(x=>x.status==='late').length;
+  $('attendanceRows').innerHTML=attendance.map(x=>'<tr><td>'+safe(x.profiles?.full_name)+'</td><td>'+safe(x.profiles?.employee_code||'—')+'</td><td>'+fmt(x.check_in)+'</td><td>'+fmt(x.check_out)+'</td><td><span class="tag">'+safe(x.status)+'</span></td><td>'+(x.worked_minutes?Math.floor(x.worked_minutes/60)+'h '+x.worked_minutes%60+'m':'—')+'</td></tr>').join('')||'<tr><td colspan="6">No attendance records yet.</td></tr>';
+  const latest=new Map();for(const x of locations){if(!latest.has(x.employee_id))latest.set(x.employee_id,x)}
+  $('locationRows').innerHTML=[...latest.values()].map(x=>'<tr><td>'+safe(x.profiles?.full_name)+'</td><td>'+new Date(x.recorded_at).toLocaleString('en-IN')+'</td><td>'+Number(x.latitude).toFixed(6)+', '+Number(x.longitude).toFixed(6)+'</td><td>±'+Math.round(x.accuracy_m||0)+'m</td></tr>').join('')||'<tr><td colspan="4">No location updates received yet.</td></tr>';
+  markers.forEach(m=>map.removeLayer(m));markers=[];
+  for(const x of latest.values()){const name=x.profiles?.full_name||'Employee';markers.push(L.marker([x.latitude,x.longitude]).addTo(map).bindPopup('<b>'+safe(name)+'</b><br>Updated: '+fmt(x.recorded_at)+'<br>Accuracy: ±'+Math.round(x.accuracy_m||0)+'m'))}
+  $('updated').textContent='Updated '+new Date().toLocaleTimeString('en-IN');
+ }catch(e){$('updated').textContent='Refresh failed: '+err(e);}
+}
+function safe(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+</script>
+</body></html>
