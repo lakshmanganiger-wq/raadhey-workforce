@@ -18,9 +18,13 @@ import java.util.*;
 public class MainActivity extends Activity {
     private static final int LOCATION_PERMISSION=41, NOTIFICATION_PERMISSION=42;
     private static final int GREEN=0xFF075B46, IVORY=0xFFF7F5EF, GOLD=0xFF9A783D;
-    // Provisional factory centre; confirm the actual factory pin before live deployment.
-    private static final double FACTORY_LAT=13.0868273605, FACTORY_LNG=77.4191855295;
-    private static final double GEOFENCE_RADIUS_M=100.0;
+    // Confirmed RAADHEY factory boundary, in clockwise order: NW, NE, SE, SW.
+    private static final double[][] FACTORY_BOUNDARY = {
+        {13.0869225, 77.4191348}, // North-West
+        {13.0868676, 77.4192857}, // North-East
+        {13.0867285, 77.4192381}, // South-East
+        {13.0867945, 77.4190815}  // South-West
+    };
     private FirebaseAuth auth;
     private DatabaseReference db;
     private Typeface lexend;
@@ -146,9 +150,8 @@ public class MainActivity extends Activity {
     private void submitAttendance(Location loc) {
         if(attendanceState==2){ toast("Attendance is already completed for today."); return; }
         float accuracy=loc.hasAccuracy()?loc.getAccuracy():9999;
-        float[] distance=new float[1]; Location.distanceBetween(FACTORY_LAT,FACTORY_LNG,loc.getLatitude(),loc.getLongitude(),distance);
         if(accuracy>150){ locationInfo.setText("GPS accuracy is "+Math.round(accuracy)+"m. Please retry outdoors."); return; }
-        if(distance[0]>GEOFENCE_RADIUS_M){ locationInfo.setText("You are outside the RAADHEY factory attendance boundary."); return; }
+        if(!isInsideFactoryBoundary(loc.getLatitude(),loc.getLongitude())){ locationInfo.setText("You are outside the RAADHEY factory attendance boundary."); return; }
         actionButton.setEnabled(false); message.setText(attendanceState==1?"Checking out…":"Checking in…");
         DatabaseReference day=db.child("attendance").child(userId).child(todayKey);
         if(attendanceState==0) {
@@ -179,6 +182,21 @@ public class MainActivity extends Activity {
                 stopTracking(); attendanceState=2; render();
             });
         }
+    }
+
+    // Ray-casting point-in-polygon check against the four confirmed factory corners.
+    private boolean isInsideFactoryBoundary(double latitude,double longitude){
+        boolean inside=false;
+        int j=FACTORY_BOUNDARY.length-1;
+        for(int i=0;i<FACTORY_BOUNDARY.length;i++){
+            double yi=FACTORY_BOUNDARY[i][0], xi=FACTORY_BOUNDARY[i][1];
+            double yj=FACTORY_BOUNDARY[j][0], xj=FACTORY_BOUNDARY[j][1];
+            boolean crosses=((yi>latitude)!=(yj>latitude)) &&
+                (longitude < (xj-xi)*(latitude-yi)/(yj-yi)+xi);
+            if(crosses) inside=!inside;
+            j=i;
+        }
+        return inside;
     }
 
     private void startTracking(){
