@@ -3,6 +3,7 @@ package com.raadhey.workforce;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.location.*;
@@ -30,6 +31,7 @@ public class MainActivity extends Activity {
     private Typeface lexend;
     private LinearLayout root;
     private EditText employeeInput,passwordInput;
+    private CheckBox keepSignedIn;
     private TextView message,status,locationInfo;
     private Button actionButton;
     private LocationManager locationManager;
@@ -45,7 +47,12 @@ public class MainActivity extends Activity {
         locationManager=(LocationManager)getSystemService(LOCATION_SERVICE);
         todayKey=dateKey();
         try { lexend=Typeface.createFromAsset(getAssets(),"Lexend.ttf"); } catch(Exception e) { lexend=Typeface.create("sans-serif",0); }
+        SharedPreferences sessionPrefs=getSharedPreferences("raadhey_session",MODE_PRIVATE);
         FirebaseUser user=auth.getCurrentUser();
+        if(user!=null && !sessionPrefs.getBoolean("keep_signed_in",true)){
+            auth.signOut();
+            user=null;
+        }
         if(user!=null){ userId=user.getUid(); loadProfile(); } else render();
     }
 
@@ -65,6 +72,9 @@ public class MainActivity extends Activity {
     private void renderLogin() {
         employeeInput=new EditText(this); employeeInput.setSingleLine(true); employeeInput.setHint("Employee ID"); employeeInput.setTextSize(15); font(employeeInput); root.addView(employeeInput,full());
         passwordInput=new EditText(this); passwordInput.setSingleLine(true); passwordInput.setHint("Password"); passwordInput.setInputType(129); passwordInput.setTextSize(15); font(passwordInput); root.addView(passwordInput,full());
+        keepSignedIn=new CheckBox(this); keepSignedIn.setText("Keep me signed in on this device"); keepSignedIn.setTextColor(0xFF555555); keepSignedIn.setTypeface(lexend); keepSignedIn.setTextSize(12);
+        keepSignedIn.setChecked(getSharedPreferences("raadhey_session",MODE_PRIVATE).getBoolean("keep_signed_in",true));
+        LinearLayout.LayoutParams keepParams=full(); keepParams.topMargin=dp(8); root.addView(keepSignedIn,keepParams);
         Button login=button("SIGN IN"); LinearLayout.LayoutParams p=full(); p.topMargin=dp(24); root.addView(login,p);
         message=label("Sign in with your RAADHEY employee ID and password.",12,0xFF666666,false); message.setPadding(0,dp(18),0,0); root.addView(message,full());
         login.setOnClickListener(v->signIn());
@@ -75,6 +85,7 @@ public class MainActivity extends Activity {
         String email=entered.contains("@")?entered:entered.toLowerCase(Locale.US)+"@employees.raadhey.com";
         String password=passwordInput.getText().toString();
         if(entered.isEmpty()||password.isEmpty()){ toast("Enter your employee ID and password."); return; }
+        getSharedPreferences("raadhey_session",MODE_PRIVATE).edit().putBoolean("keep_signed_in",keepSignedIn!=null && keepSignedIn.isChecked()).apply();
         message.setText("Signing in…");
         auth.signInWithEmailAndPassword(email,password).addOnCompleteListener(this, task->{
             if(!task.isSuccessful()){ message.setText(task.getException()!=null?task.getException().getLocalizedMessage():"Sign-in failed."); return; }
