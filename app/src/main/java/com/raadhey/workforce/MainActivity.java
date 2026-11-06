@@ -13,6 +13,8 @@ import android.widget.*;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.*;
+import com.google.firebase.functions.FirebaseFunctions;
+import com.google.firebase.functions.FirebaseFunctionsException;
 import java.util.*;
 
 public class MainActivity extends Activity {
@@ -129,29 +131,16 @@ public class MainActivity extends Activity {
         if(distance[0]>GEOFENCE_RADIUS_M){ locationInfo.setText("You are outside the RAADHEY factory attendance boundary."); return; }
         actionButton.setEnabled(false); message.setText(checkedIn?"Checking out…":"Checking in…");
         String date=new java.text.SimpleDateFormat("yyyy-MM-dd",Locale.US).format(new Date());
-        DatabaseReference record=db.child("attendance").child(userId).child(date);
-        record.runTransaction(new Transaction.Handler(){
-            @Override public Transaction.Result doTransaction(MutableData current){
-                if(!checkedIn){
-                    if(current.getValue()!=null) return Transaction.abort();
-                    Map<String,Object> v=new HashMap<>(); v.put("employeeId",userId);v.put("employeeCode",employeeCode);v.put("workDate",date);
-                    v.put("checkInAt",ServerValue.TIMESTAMP);v.put("checkInLat",loc.getLatitude());v.put("checkInLng",loc.getLongitude());v.put("checkInAccuracyM",accuracy);v.put("status",new java.text.SimpleDateFormat("HH:mm",Locale.US).format(new Date()).compareTo("09:15")>0?"late":"present");
-                    current.setValue(v);
-                } else {
-                    if(current.getValue()==null||current.child("checkOutAt").getValue()!=null) return Transaction.abort();
-                    current.child("checkOutAt").setValue(ServerValue.TIMESTAMP);current.child("checkOutLat").setValue(loc.getLatitude());current.child("checkOutLng").setValue(loc.getLongitude());current.child("checkOutAccuracyM").setValue(accuracy);
-                }
-                return Transaction.success(current);
-            }
-            @Override public void onComplete(DatabaseError error,boolean committed,DataSnapshot snapshot){
-                actionButton.setEnabled(true);
-                if(error!=null||!committed){message.setText(error!=null?error.getMessage():"Attendance state changed. Refresh and try again.");return;}
-                checkedIn=!checkedIn; refreshAttendance();
-                locationInfo.setText("GPS verified: ±"+Math.round(accuracy)+"m; "+Math.round(distance[0])+"m from factory reference.");
-                message.setText("Attendance synced successfully.");
-                if(checkedIn) startTracking(); else stopTracking();
-            }
-        },false);
+        String callable=checkedIn?"employeeCheckOut":"employeeCheckIn";
+        Map<String,Object> payload=new HashMap<>();payload.put("latitude",loc.getLatitude());payload.put("longitude",loc.getLongitude());payload.put("accuracyM",accuracy);
+        FirebaseFunctions.getInstance("asia-south1").getHttpsCallable(callable).call(payload).addOnCompleteListener(task->{
+            actionButton.setEnabled(true);
+            if(!task.isSuccessful()){Exception e=task.getException();message.setText(e!=null?e.getLocalizedMessage():"Attendance request failed.");return;}
+            checkedIn=!checkedIn;refreshAttendance();
+            locationInfo.setText("GPS verified: ±"+Math.round(accuracy)+"m; factory boundary validated.");
+            message.setText("Attendance synced securely to Firebase.");
+            if(checkedIn)startTracking();else stopTracking();
+        });
     }
 
     private void refreshAttendance(){ status.setText(checkedIn?"STATUS: CHECKED IN":"STATUS: NOT CHECKED IN"); actionButton.setText(checkedIn?"CHECK OUT":"CHECK IN"); }
