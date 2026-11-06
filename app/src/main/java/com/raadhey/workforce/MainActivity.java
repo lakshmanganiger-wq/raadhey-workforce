@@ -90,10 +90,18 @@ public class MainActivity extends Activity {
                 auth.signOut(); render(); if(message!=null) message.setText("Employee profile not found. Ask the administrator to create your account in Firebase."); return;
             }
             DataSnapshot p=task.getResult();
-            if(!Boolean.TRUE.equals(p.child("active").getValue(Boolean.class)) || !"employee".equals(p.child("role").getValue(String.class))){
-                auth.signOut(); render(); if(message!=null) message.setText("This account is inactive or is not an employee account."); return;
+            if(!Boolean.TRUE.equals(p.child("active").getValue(Boolean.class))){
+                auth.signOut(); render(); if(message!=null) message.setText("This account is inactive. Contact the RAADHEY administrator."); return;
             }
+            String role=Objects.toString(p.child("role").getValue(String.class),"");
             employeeName=Objects.toString(p.child("fullName").getValue(String.class),"Employee");
+            if("admin".equals(role)){
+                renderFounderDashboard();
+                return;
+            }
+            if(!"employee".equals(role)){
+                auth.signOut(); render(); if(message!=null) message.setText("This account does not have an authorised RAADHEY role."); return;
+            }
             employeeCode=Objects.toString(p.child("employeeCode").getValue(String.class),"");
             todayKey=dateKey();
             db.child("attendance").child(userId).child(todayKey).get().addOnSuccessListener(a->{
@@ -104,6 +112,64 @@ public class MainActivity extends Activity {
                 if(attendanceState==1) startTracking();
             });
         });
+    }
+
+    private void renderFounderDashboard() {
+        root.removeAllViews();
+        TextView heading=label("FOUNDER DASHBOARD",20,GREEN,true);
+        heading.setPadding(0,dp(12),0,dp(8)); root.addView(heading,full());
+        TextView welcome=label("Welcome, "+employeeName,14,0xFF555555,false);
+        welcome.setPadding(0,0,0,dp(18)); root.addView(welcome,full());
+        LinearLayout stats=new LinearLayout(this); stats.setOrientation(LinearLayout.VERTICAL);
+        stats.setPadding(dp(14),dp(14),dp(14),dp(14)); stats.setBackgroundColor(0xFFFFFFFF);
+        TextView employees=label("ACTIVE EMPLOYEES: Loading…",15,GREEN,true);
+        TextView present=label("PRESENT TODAY: Loading…",15,GREEN,true);
+        TextView onDuty=label("ON DUTY NOW: Loading…",15,GREEN,true);
+        TextView late=label("LATE TODAY: Loading…",15,GREEN,true);
+        stats.addView(employees,full()); stats.addView(present,full()); stats.addView(onDuty,full()); stats.addView(late,full());
+        root.addView(stats,full());
+        TextView listTitle=label("EMPLOYEE DIRECTORY",16,GREEN,true);
+        listTitle.setPadding(0,dp(22),0,dp(10)); root.addView(listTitle,full());
+        LinearLayout employeeList=new LinearLayout(this); employeeList.setOrientation(LinearLayout.VERTICAL);
+        ScrollView listScroll=new ScrollView(this); listScroll.addView(employeeList);
+        LinearLayout.LayoutParams listParams=full(); listParams.height=dp(280); root.addView(listScroll,listParams);
+        Runnable refresh=()->{
+            db.child("profiles").get().addOnSuccessListener(all->{
+                int active=0; employeeList.removeAllViews();
+                for(DataSnapshot item:all.getChildren()){
+                    if(!"employee".equals(item.child("role").getValue(String.class))) continue;
+                    boolean enabled=Boolean.TRUE.equals(item.child("active").getValue(Boolean.class));
+                    if(enabled) active++;
+                    String name=Objects.toString(item.child("fullName").getValue(String.class),"Employee");
+                    String code=Objects.toString(item.child("employeeCode").getValue(String.class),"");
+                    TextView row=label(name+"  ·  "+code+"  ·  "+(enabled?"ACTIVE":"INACTIVE"),13,enabled?GREEN:0xFFB42318,true);
+                    row.setPadding(dp(10),dp(12),dp(10),dp(12));
+                    employeeList.addView(row,full());
+                }
+                employees.setText("ACTIVE EMPLOYEES: "+active);
+                db.child("attendance").get().addOnSuccessListener(records->{
+                    int total=0,working=0,lateCount=0;
+                    for(DataSnapshot person:records.getChildren()){
+                        DataSnapshot today=person.child(dateKey());
+                        if(today.exists()){
+                            total++;
+                            if(!today.child("checkOutAt").exists()) working++;
+                            if(Boolean.TRUE.equals(today.child("late").getValue(Boolean.class))) lateCount++;
+                        }
+                    }
+                    present.setText("PRESENT TODAY: "+total);
+                    onDuty.setText("ON DUTY NOW: "+working);
+                    late.setText("LATE TODAY: "+lateCount);
+                }).addOnFailureListener(e->present.setText("Attendance unavailable: "+e.getLocalizedMessage()));
+            }).addOnFailureListener(e->employees.setText("Unable to load employees: "+e.getLocalizedMessage()));
+        };
+        Button reload=button("REFRESH DASHBOARD"); LinearLayout.LayoutParams rp=full(); rp.topMargin=dp(16); root.addView(reload,rp); reload.setOnClickListener(v->refresh.run());
+        Button logout=button("SIGN OUT"); logout.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF777777));
+        LinearLayout.LayoutParams lp=full(); lp.topMargin=dp(10); root.addView(logout,lp);
+        logout.setOnClickListener(v->{auth.signOut(); attendanceState=0; render();});
+        TextView note=label("Founder access · Employee attendance and directory overview",11,0xFF777777,false);
+        note.setPadding(0,dp(16),0,0); root.addView(note,full());
+        refresh.run();
     }
 
     private void renderAttendance() {
