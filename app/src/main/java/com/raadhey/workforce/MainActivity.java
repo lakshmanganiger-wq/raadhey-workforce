@@ -75,9 +75,10 @@ public class MainActivity extends Activity {
     }
 
     private void signIn() {
-        String email=emailInput.getText().toString().trim(), password=passwordInput.getText().toString();
-        if(!email.contains("@")) email=email.toUpperCase(Locale.US)+"@employees.raadhey.com";
-        if(email.isEmpty()||password.isEmpty()){ toast("Enter your email and password."); return; }
+        String enteredId=emailInput.getText().toString().trim();
+        final String email=enteredId.contains("@")?enteredId:enteredId.toUpperCase(Locale.US)+"@employees.raadhey.com";
+        String password=passwordInput.getText().toString();
+        if(enteredId.isEmpty()||password.isEmpty()){ toast("Enter your employee ID and password."); return; }
         message.setText("Signing in…");
         io.execute(()->{
             try {
