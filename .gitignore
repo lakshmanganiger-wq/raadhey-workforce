@@ -1,7 +1,6 @@
-# Android / Gradle
-.gradle/
-**/build/
-local.properties
-*.iml
-.idea/
-.DS_Store
+serviceAccountKey.json
+**/serviceAccountKey.json
+node_modules/
+functions/node_modules/
+.firebase/
+*.log
