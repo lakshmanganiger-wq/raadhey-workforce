@@ -2,8 +2,13 @@ plugins {
     id 'com.android.application'
 }
 
-def supabaseUrl = (project.findProperty('supabaseUrl') ?: System.getenv('SUPABASE_URL') ?: '').toString()
-def supabaseAnonKey = (project.findProperty('supabaseAnonKey') ?: System.getenv('SUPABASE_ANON_KEY') ?: '').toString()
+def localSupabase = new Properties()
+def localConfig = file('supabase.properties')
+if (localConfig.exists()) {
+    localConfig.withInputStream { localSupabase.load(it) }
+}
+def supabaseUrl = (project.findProperty('supabaseUrl') ?: System.getenv('SUPABASE_URL') ?: localSupabase.getProperty('SUPABASE_URL', '')).toString()
+def supabaseAnonKey = (project.findProperty('supabaseAnonKey') ?: System.getenv('SUPABASE_ANON_KEY') ?: localSupabase.getProperty('SUPABASE_ANON_KEY', '')).toString()
 
 android {
     namespace 'com.raadhey.workforce'
